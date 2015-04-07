@@ -1,0 +1,22 @@
+#include <iostream>
+
+#include "../../Libraries/Params/Parameters.h"
+#include "VertexGenerator.h"
+#include "Network.h"
+
+using namespace std;
+
+int main ( int argc, char** argv ){
+  unique_ptr < Parameters > P ( new Parameters () );
+  P->Read(argc, argv);
+  
+  switch ( P->get<char> ( "type", 'u' ) ){
+  case 's':
+    Network < string > N ( P );
+    break;
+  case 'u':
+    Network < unsigned int > N ( P );
+    break;
+  }
+  
+}

@@ -1,6 +1,11 @@
 #ifndef RPI_VERTEX
 #define RPI_VERTEX
 
+#include <set>
+#include "../../Libraries/Files/StringEx.h"
+
+using namespace std;
+
 /**
  *@class Vertex
  *
@@ -38,33 +43,54 @@ class Vertex {
    *
    *@param other Vertex to copy
    */
-  Vertex ( const Vertex& other ):id_(other.id_), energy_(other.energy_);
+  Vertex ( const Vertex& other ):id_(other.id_), energy_(other.energy_){};
   
   /**
    *@fn Vertex& operator=(const Vertex& other)
    *
+   * Assignment. Should provide a deep copy if there is ever a need.
+   *
+   *@param other Vertex to copy from
+   *@return A copy of this object
    */
   Vertex& operator=(const Vertex& other);
 
   /**
-   *@fn boolean operator<(const Vertex& other)
+   *@fn bool operator<(const Vertex& other)
    *
+   *Compares two vertices ( mainly for use in sets and maps )
+   *
+   *@return True if this vertex's id_ is less than the others
    */
-  boolean operator<(const Vertex& other);
-  
-  
+  bool operator<(const Vertex& other) { return id_ < other.id_; };
+  bool operator<(const Vertex& other) const { return id_ < other.id_; };
 
   /**
    *@fn T getID ( )
    *@fn double getEnergy ()
    *
-   *Simply returns variable values. ('get' methods)
+   *Simply returns variable values. ('get' methods)  
    *
    *@return The vertex ID and energy value, respectively
    */
   T getID ( ) { return id_; }
   double getEnergy () { return energy_; }
 
+  /**
+   *@fn string toString()
+   *
+   * Retrieves a string representation of the vertex ( just the id )
+   *
+   *@return String representation of the vertex id
+   */
+  string toString() {
+    return to_str < T > ( id_ );
+  }
+
+  string toString() const {
+    return to_str < T > ( id_ );
+  }
+  
   /**
    *@fn ~Vertex()
    *
@@ -75,6 +101,6 @@ class Vertex {
  private:
   T id_;
   double energy_;
-}
+};
 
 #endif
