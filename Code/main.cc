@@ -1,21 +1,19 @@
 #include <iostream>
 
 #include "../../Libraries/Params/Parameters.h"
-#include "VertexGenerator.h"
 #include "Network.h"
 
 using namespace std;
 
 int main ( int argc, char** argv ){
+  //Reads in the command line arguments
   unique_ptr < Parameters > P ( new Parameters () );
   P->Read(argc, argv);
- 
-
-  if ( P->get<char> ( "type", 'u' ) == 's' ){
-    Network < string > N ( P );
-  } else {
-    Network < unsigned int > N ( P );
-  }
- 
   
+  //Creates the first time window's static network
+  unique_ptr < Network> N ( new Network ( P ) );
+  
+  //Iteratively constructs following time windows, 
+  //   printing out the information as it goes
+
 }

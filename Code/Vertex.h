@@ -15,24 +15,21 @@ using namespace std;
  *           (b) Robustness testing used anonymization of vertex labels.
  *
  *      Extensions or redesigns to the class may need to be made for other uses.
- *
- *  The typename T clarifies the type of label used for the vertex. Usually it is an int or a string.
  */
 
-template < typename T >
 class Vertex { 
  public:
   /**
-   *@fn Vertex(T label):id_(label)
-   *@fn Vertex(T label, double new_energy ):id_(label), new_energy(energy_)
+   *@fn Vertex(unsigned int label):id_(label)
+   *@fn Vertex(unsigned int label, double new_energy ):id_(label), new_energy(energy_)
    *
    *Initializes member variables to given values
    *
    *@param label Identification of the vertex
    *@param new_energy Energy value for vertex
    */
- Vertex(T label):id_(label), energy_(0){};
- Vertex(T label, double new_energy ):id_(label), energy_(new_energy){};
+ Vertex(unsigned int label):id_(label), energy_(0){};
+ Vertex(unsigned int label, double new_energy ):id_(label), energy_(new_energy){};
 
   /**
    *@fn Vertex ( const Vertex& other )
@@ -66,15 +63,16 @@ class Vertex {
   bool operator<(const Vertex& other) const { return id_ < other.id_; };
 
   /**
-   *@fn T getID ( )
+   *@fn unsigned int getID ( )
    *@fn double getEnergy ()
    *
    *Simply returns variable values. ('get' methods)  
    *
    *@return The vertex ID and energy value, respectively
    */
-  T getID ( ) { return id_; }
+  unsigned int getID ( ) { return id_; }
   double getEnergy () { return energy_; }
+  double getEnergy () const { return energy_; }
 
   /**
    *@fn string toString()
@@ -84,11 +82,11 @@ class Vertex {
    *@return String representation of the vertex id
    */
   string toString() {
-    return to_str < T > ( id_ );
+    return to_str < unsigned int > ( id_ );
   }
 
   string toString() const {
-    return to_str < T > ( id_ );
+    return to_str < unsigned int > ( id_ );
   }
   
   /**
@@ -99,7 +97,7 @@ class Vertex {
   ~Vertex(){};
 
  private:
-  T id_;
+  unsigned int id_;
   double energy_;
 };
 
