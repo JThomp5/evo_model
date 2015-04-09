@@ -2,7 +2,10 @@
 #define RPI_NETWORK
 
 #include "Vertex.h"
+#include "Community.h"
 #include "../../Libraries/Random/PowerLaw.h"
+#include "../../Libraries/Random/Wrappers.h"
+#include "../../Libraries/Params/Parameters.h"
 #include <set>
 #include <tr1/memory>
 #include <iostream>
@@ -39,33 +42,70 @@ class Network{
    *
    *@param P See README for description of parameters
    */
-  Network ( unique_ptr < Parameters >& P ): next_id_(0), vpl_( new PowerLaw ( -P->get < double > ( "vexp", -2.0 ), P->get < double > ( "vmin", 1 ), P->get < double > ( "vmax", 5 ) ) ){
-    if ( vpl_->getExp() < 0) { vpl_ = NULL;}
+  Network ( unique_ptr < Parameters >& P ): total_energy_(0), next_id_(0), vpl_( new PowerLaw ( -P->get < double > ( "vexp", -2.0 ), P->get < double > ( "vmin", 1 ), P->get < double > ( "vmax", 5 ) ) ){
+    if ( vpl_->getExp() > 0) { vpl_ = NULL;}
 
     //Goes through and initializes each vertex individually
     unsigned int num_vert = P->get < unsigned int > ( "V", 10 );
     for ( unsigned int i = 0; i < num_vert; i++ ){
-      V_.insert ( Vertex ( next_id_++, vpl_->Sample() ) );
+      double next_energy = vpl_->Sample();
+      total_energy_ += next_energy;
+      V_.insert ( shared_ptr < Vertex > ( new Vertex ( next_id_++, next_energy ) ) );
     }
   }
 
   ~Network(){};
+
+  void addCommunity( shared_ptr < Community > C ) {
+    C_.push_back ( C );
+  }
+
+  void printCommunities(){
+    for ( int i = 0; i < C_.size(); i++ ){
+      cout << C_[i]->toString() << endl;
+    }
+  }
 
   /**
    *THIS FUNCTION IS FOR DEBUGGING AND CAN BE SAFELY REMOVED 
    *    (PROBABLY)
    */
   void printVertices() {
-    typename set < Vertex >::iterator it_v;
+    set < shared_ptr < Vertex > >::iterator it_v;
     
     for ( it_v = V_.begin(); it_v != V_.end(); it_v++ ){
-      cout << it_v->toString() << " : " << it_v->getEnergy() <<  endl;
+      cout << (*it_v)->toString() << " : " << (*it_v)->getEnergy() <<  endl;
     }
   };
 
+  /**
+   *
+   */
+  unsigned int NumVerts ( ){
+    return V_.size();
+  }
+
+  shared_ptr < Vertex > getRandomVertex ( ){
+    double energy_seen = 0;
+    double random_target = random_double() * total_energy_;
+    
+    vset::iterator it_v = V_.begin();
+    while ( ( energy_seen < random_target ) && (it_v != V_.end()) ){
+      energy_seen += (*it_v)->getEnergy();
+      if ( energy_seen > random_target ){
+	return *it_v;
+      }
+      ++it_v;
+    }
+    
+    return (*(V_.begin()));
+  }
+
  private:
-  set < Vertex > V_;              //Vertex structure
+  set < shared_ptr < Vertex >, cmp_vptr > V_;              //Vertex structure
+  vector < shared_ptr < Community > > C_;
   unsigned int next_id_;          //Track largest id
+  double total_energy_;
   unique_ptr < PowerLaw > vpl_;   //Power law for energy values
 };
 
@@ -85,8 +125,7 @@ class Network{
  *@return False if an edge or community structure was 
  *       already in place.
  */
-bool RandomNetwork ( unique_ptr < Network >& N ){
-  
-}
+bool RandomNetwork ( unique_ptr < Network >& N, unique_ptr < Parameters >& P );
+shared_ptr < Community > RandomCommunity ( unsigned int size, unique_ptr < Network >& N );
 
 #endif

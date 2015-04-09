@@ -4,6 +4,8 @@
 #include <set>
 #include "../../Libraries/Files/StringEx.h"
 
+#include <tr1/memory>
+
 using namespace std;
 
 /**
@@ -33,6 +35,7 @@ class Vertex {
 
   /**
    *@fn Vertex ( const Vertex& other )
+   *@fn Vertex ( const Vertex* other )
    *
    *Provides a deep copy of given vertex
    * (Right now, this is the same as a shallow copy, but 
@@ -41,6 +44,7 @@ class Vertex {
    *@param other Vertex to copy
    */
   Vertex ( const Vertex& other ):id_(other.id_), energy_(other.energy_){};
+  Vertex ( const Vertex* other ):id_(other->id_), energy_(other->energy_){};
   
   /**
    *@fn Vertex& operator=(const Vertex& other)
@@ -100,5 +104,13 @@ class Vertex {
   unsigned int id_;
   double energy_;
 };
+
+struct cmp_vptr {
+  bool operator () ( const shared_ptr < Vertex >& A, const shared_ptr < Vertex >& B ){
+    return ( *A < *B );
+  }
+};
+
+typedef set < shared_ptr < Vertex >, cmp_vptr > vset;
 
 #endif
