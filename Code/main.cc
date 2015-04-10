@@ -12,9 +12,10 @@ int main ( int argc, char** argv ){
   
   //Creates the first time window's static network
   unique_ptr < Network> N ( new Network ( P ) );
-  RandomNetwork ( N, P );
+  N->RandomNetwork ( P );
   N->printCommunities();
   
+  N->printEdges();
   //Iteratively constructs following time windows, 
   //   printing out the information as it goes
   

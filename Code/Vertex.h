@@ -30,8 +30,8 @@ class Vertex {
    *@param label Identification of the vertex
    *@param new_energy Energy value for vertex
    */
- Vertex(unsigned int label):id_(label), energy_(0){};
- Vertex(unsigned int label, double new_energy ):id_(label), energy_(new_energy){};
+ Vertex(unsigned int label):id_(label), energy_(0), edge_count_(0){};
+ Vertex(unsigned int label, double new_energy ):id_(label), energy_(new_energy), edge_count_(0){};
 
   /**
    *@fn Vertex ( const Vertex& other )
@@ -92,7 +92,15 @@ class Vertex {
   string toString() const {
     return to_str < unsigned int > ( id_ );
   }
-  
+
+  /**
+   *
+   * edge_count_ probably could have been public, to be honest
+   */
+  void resetEdgeCount() { edge_count_ = 0; }
+  void incrementEdgeCount(){ ++edge_count_; }
+  unsigned int getEdgeCount() { return edge_count_; }
+
   /**
    *@fn ~Vertex()
    *
@@ -103,6 +111,7 @@ class Vertex {
  private:
   unsigned int id_;
   double energy_;
+  unsigned int edge_count_;
 };
 
 struct cmp_vptr {

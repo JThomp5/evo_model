@@ -3,6 +3,7 @@
 
 #include "Vertex.h"
 #include "Community.h"
+#include "Edge.h"
 #include "../../Libraries/Random/PowerLaw.h"
 #include "../../Libraries/Random/Wrappers.h"
 #include "../../Libraries/Params/Parameters.h"
@@ -42,22 +43,26 @@ class Network{
    *
    *@param P See README for description of parameters
    */
-  Network ( unique_ptr < Parameters >& P ): total_energy_(0), next_id_(0), vpl_( new PowerLaw ( -P->get < double > ( "vexp", -2.0 ), P->get < double > ( "vmin", 1 ), P->get < double > ( "vmax", 5 ) ) ){
-    if ( vpl_->getExp() > 0) { vpl_ = NULL;}
-
-    //Goes through and initializes each vertex individually
-    unsigned int num_vert = P->get < unsigned int > ( "V", 10 );
-    for ( unsigned int i = 0; i < num_vert; i++ ){
-      double next_energy = vpl_->Sample();
-      total_energy_ += next_energy;
-      V_.insert ( shared_ptr < Vertex > ( new Vertex ( next_id_++, next_energy ) ) );
+  Network ( unique_ptr < Parameters >& P ): total_energy_(0), next_id_(0), vpl_( new PowerLaw ( -P->get < double > ( "vexp", -2.0 ), P->get < double > ( "vmin", 1 ), P->get < double > ( "vmax", 5 ) ) ), cpl_( new PowerLaw ( -(P->get < double > ( "cexp" ) ), P->get < double > ("cmin"), P->get<double>("cmax") ) ){
+    if ( vpl_->getExp() > 0) { 
+      cerr << "Setting vertex energy power law to NULL. Set -vexp to change." << endl;
+      vpl_ = NULL;
     }
   }
 
   ~Network(){};
 
+  void RandomNetwork ( unique_ptr < Parameters >& P );
+  shared_ptr < Community > RandomCommunity ( unsigned int size );
+
   void addCommunity( shared_ptr < Community > C ) {
     C_.push_back ( C );
+    
+    const vset c_mem = C->getMembers();
+    vset::const_iterator it_c;
+    for ( it_c = c_mem.begin(); it_c != c_mem.end(); it_c++ ){
+      membership_.insert(pair < shared_ptr < Vertex >, int > ( *it_c, C_.size() - 1 ) );
+    }
   }
 
   void printCommunities(){
@@ -65,6 +70,16 @@ class Network{
       cout << C_[i]->toString() << endl;
     }
   }
+
+  void printEdges ( ) {
+    eset::iterator it_e;
+    for ( it_e = E_.begin(); it_e != E_.end(); it_e++ ){
+      cout << (*it_e)->toString() << " " << (*it_e)->getWeight() << endl;
+    }
+  }
+
+  void fillCommunities( unique_ptr < Parameters >& P );
+  void populateEdges ( unique_ptr < Parameters >& P );
 
   /**
    *THIS FUNCTION IS FOR DEBUGGING AND CAN BE SAFELY REMOVED 
@@ -85,6 +100,8 @@ class Network{
     return V_.size();
   }
 
+  void genNextTimeWindow( unique_ptr < Parameters >& P );
+
   shared_ptr < Vertex > getRandomVertex ( ){
     double energy_seen = 0;
     double random_target = random_double() * total_energy_;
@@ -104,28 +121,12 @@ class Network{
  private:
   set < shared_ptr < Vertex >, cmp_vptr > V_;              //Vertex structure
   vector < shared_ptr < Community > > C_;
+  eset E_;
+  map < shared_ptr < Vertex >, int, cmp_vptr > membership_;
   unsigned int next_id_;          //Track largest id
   double total_energy_;
   unique_ptr < PowerLaw > vpl_;   //Power law for energy values
+  unique_ptr < PowerLaw > cpl_;   //Communty sizes
 };
-
-/**
- *@fn void RandomNetwork ( unique_ptr < Network >& N )
- *
- *@PRECONDITIONS:
- *
- *Constructs a new random community structure and edge structure
- *    for the given network, which must have a vertex structure. If
- *    a community or edge structure exists, this function will not
- *    work.
- *
- *@POSTCONDITIONS:
- *
- *@param N Network with a vertex structure.
- *@return False if an edge or community structure was 
- *       already in place.
- */
-bool RandomNetwork ( unique_ptr < Network >& N, unique_ptr < Parameters >& P );
-shared_ptr < Community > RandomCommunity ( unsigned int size, unique_ptr < Network >& N );
 
 #endif
