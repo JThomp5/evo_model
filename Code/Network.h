@@ -9,7 +9,9 @@
 #include "../../Libraries/Params/Parameters.h"
 #include <set>
 #include <tr1/memory>
+#include <algorithm>
 #include <iostream>
+#include <fstream>
 
 using namespace std;
 
@@ -43,11 +45,12 @@ class Network{
    *
    *@param P See README for description of parameters
    */
-  Network ( unique_ptr < Parameters >& P ): total_energy_(0), next_id_(0), vpl_( new PowerLaw ( -P->get < double > ( "vexp", -2.0 ), P->get < double > ( "vmin", 1 ), P->get < double > ( "vmax", 5 ) ) ), cpl_( new PowerLaw ( -(P->get < double > ( "cexp" ) ), P->get < double > ("cmin"), P->get<double>("cmax") ) ){
+  Network ( unique_ptr < Parameters >& P ): total_energy_(0), next_id_(0), vpl_( new PowerLaw ( -P->get < double > ( "vexp", 1.75 ), P->get < double > ( "vmin", 0.4 ), P->get < double > ( "vmax", 1 ) ) ), cpl_( new PowerLaw ( -(P->get < double > ( "cexp", 2.75 ) ), P->get < double > ("cmin", 3), P->get<double>("cmax", 55) ) ), current_window_(0){
     if ( vpl_->getExp() > 0) { 
       cerr << "Setting vertex energy power law to NULL. Set -vexp to change." << endl;
       vpl_ = NULL;
     }
+    srand ( time ( NULL ) );
   }
 
   ~Network(){};
@@ -78,7 +81,7 @@ class Network{
     }
   }
 
-  void fillCommunities( unique_ptr < Parameters >& P );
+  void fillCommunities( );
   void populateEdges ( unique_ptr < Parameters >& P );
 
   /**
@@ -100,7 +103,25 @@ class Network{
     return V_.size();
   }
 
+  void printVerts(){
+    vset::iterator it_v = V_.begin(); 
+    while ( it_v != V_.end() ){
+      cout << (*it_v)->toString() << " ";
+
+      ++it_v;
+    }
+    cout << endl;
+  }
+
+  void printNetwork ( string filename );
+
+  void addRandomVertex ( );
   void genNextTimeWindow( unique_ptr < Parameters >& P );
+
+  void deathEvents ( double dprob );
+  void birthEvents ( double bprop );
+  void growAndShrink ( double pgr, double sgr );
+  void mergeAndSplit ( double merge_prob, double split_prob, double duplicate_prob, int min_split_size, string filename );
 
   shared_ptr < Vertex > getRandomVertex ( ){
     double energy_seen = 0;
@@ -127,6 +148,8 @@ class Network{
   double total_energy_;
   unique_ptr < PowerLaw > vpl_;   //Power law for energy values
   unique_ptr < PowerLaw > cpl_;   //Communty sizes
+  
+  int current_window_;
 };
 
 #endif

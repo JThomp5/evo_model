@@ -13,7 +13,7 @@ class Edge:public Group {
   ~Edge(){}
   
   bool generateWeight(unique_ptr < Parameters >& P ) {
-    PowerLaw pl ( -1.75, getTotalEnergy(P->get < double > ( "grav",0.2 ) ), 3.0 );
+    PowerLaw pl ( -1.75, getTotalEnergy(P->get < double > ( "grav",0.2 ), P-> get < double > ( "minlag", 0.2 ), P->get < double > ( "vmax", 1 ) ), 3.0 );
     edge_weight_ = 0;
     
     while ( wait_time_ < 1.0 ){
@@ -34,24 +34,28 @@ class Edge:public Group {
     return edge_weight_ > 0;
   }
 
-  double getTotalEnergy( const double& gravity ){
-    double res = 1000;
-    double min_res = 0;
+  double getTotalEnergy( double gravity, double minlag, double max_energy){
+    double res = -1;
+    double max_res = 0;
     bool considered = false;
     
     vset::iterator it_v;
     for ( it_v = members_.begin(); it_v != members_.end(); it_v++ ){
-      if ( (*it_v)->getEnergy() < res ) {
-	res = (*it_v)->getEnergy();
+      double v_lag = ( max_energy - (*it_v)->getEnergy() ) + minlag;
+      if ( v_lag > res ) {
+	res = v_lag;
       }
     }
     
+    max_res = res;
+
     for ( it_v = members_.begin(); it_v != members_.end(); it_v++ ){
-      if ( ( (*it_v)->getEnergy() == min_res ) && (!considered) ){
+      double v_lag = ( max_energy - (*it_v)->getEnergy() ) + minlag;
+      if ( ( v_lag == max_res ) && (!considered) ){
 	considered = true;
 	continue;
       } else {
-	res += ( gravity * ( ((*it_v)->getEnergy()) - (res) ) );
+	res -= ( gravity * ( res - v_lag ) );
       }
     }
     
@@ -59,6 +63,23 @@ class Edge:public Group {
   }
 
   double getWeight ( ) { return edge_weight_; }
+  
+  string toString() {
+    string res = "";
+    
+    if ( edge_weight_ == 0 ) return res;
+
+    vset::iterator it_a, it_b;
+    for ( it_a = members_.begin(); it_a != members_.end(); it_a++ ){
+      it_b = it_a;
+      for ( ++it_b; it_b != members_.end(); it_b++ ){
+	res += (*it_a)->toString() + " " + (*it_b)->toString() + " " + to_str < double > ( edge_weight_ ) + "\n";
+      }
+      
+    }
+    
+    return res;
+  }
 
  private:
   double wait_time_;

@@ -56,6 +56,38 @@ bool Group::hasMember ( shared_ptr < Vertex >  V ){
   return ( members_.find ( V ) != members_.end() );
 }
 
+const shared_ptr < Vertex >& Group::getRandomMember (){
+  int choice = rand() % members_.size();
+  vset::iterator it_v = members_.begin();
+  
+  for ( int i = 0; i < choice; i++ ){
+    ++it_v;
+  }
+  
+  return *it_v;
+}
+
+shared_ptr < Vertex > Group::removeRandomMember(){
+  int choice = rand() % members_.size();
+  vset::iterator it_v = members_.begin();
+  
+  for ( int i = 0; i < choice; i++ ){
+    ++it_v;
+  }
+
+  //cerr << "Removing " << (*it_v)->toString() << endl;
+
+  shared_ptr < Vertex > res = const_cast < shared_ptr < Vertex > & >(*it_v);
+
+  members_.erase ( it_v );
+  
+  return res;
+}
+
+void Group::clearMembers ( ){
+  members_.clear();
+}
+
 string Group::toString() {
   vset::iterator it_v;
   string res = "( ";

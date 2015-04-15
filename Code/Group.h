@@ -2,6 +2,7 @@
 #define RPI_GROUP
 
 #include "Vertex.h"
+#include <iostream>
 
 using namespace std;
 
@@ -17,6 +18,9 @@ class Group{
   
   bool addMember ( shared_ptr < Vertex > V );
   bool hasMember ( shared_ptr < Vertex > V );
+  shared_ptr < Vertex > removeRandomMember();
+  const shared_ptr < Vertex >& getRandomMember();
+  void clearMembers ( );
   
   virtual string toString();
   unsigned int size() { return members_.size(); }
