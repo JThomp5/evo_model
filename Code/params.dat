@@ -1,1 +1,0 @@
--V 1000 -vexp 1.75 -vmin 0.4 -vmax 1 -cexp 2.75 -cmin 3 -cmax 55 -grav 0.2 -V 1000 -vmem 1.2 -mp 0.85 -vnewmin 0.2 -vnewmax 0.4 -cdie 0.05 -pgrow 0.85 -maxgrow 0.5 -pmerge 1 -psplit 0.01 -dup 0.05 -minsplit 7 -cnew 0.25 -minlag 0.2 

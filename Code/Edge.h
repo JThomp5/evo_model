@@ -73,7 +73,7 @@ class Edge:public Group {
     for ( it_a = members_.begin(); it_a != members_.end(); it_a++ ){
       it_b = it_a;
       for ( ++it_b; it_b != members_.end(); it_b++ ){
-	res += (*it_a)->toString() + " " + (*it_b)->toString() + " " + to_str < double > ( edge_weight_ ) + "\n";
+	res += (*it_a)->toString() + "|" + (*it_b)->toString() + "|" + to_str < double > ( edge_weight_ ) + "\n";
       }
       
     }
