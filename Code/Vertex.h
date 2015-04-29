@@ -1,3 +1,28 @@
+/**
+ *@file Vertex.h
+ *
+ *Definitions for the Vertex class
+ *
+ *@author James Thompson
+ *
+ *Copyright James Thompson 2015
+ *This program is distributed under the terms of the GNU General Public License
+
+This file is part of RPI-evo-model.                                                                                                   
+    RPI-evo-model is free software: you can redistribute it and/or modify                                                              
+    it under the terms of the GNU General Public License as published by                                                               
+    the Free Software Foundation, either version 3 of the License, or                                                                  
+    (at your option) any later version.                                                                                               
+
+    RPI-evo-model is distributed in the hope that it will be useful,                                                                   
+    but WITHOUT ANY WARRANTY; without even the implied warranty of                                                               
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                                                                   
+    GNU General Public License for more details.                                                                                      
+
+    You should have received a copy of the GNU General Public License                                                                  
+    along with RPI-evo-model.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #ifndef RPI_VERTEX
 #define RPI_VERTEX
 
@@ -49,7 +74,9 @@ class Vertex {
   /**
    *@fn Vertex& operator=(const Vertex& other)
    *
-   * Assignment. Should provide a deep copy if there is ever a need.
+   * Assignment. 
+   * Simple copy of members at this point.
+   * Should provide a deep copy if there is ever a need.
    *
    *@param other Vertex to copy from
    *@return A copy of this object
@@ -69,6 +96,7 @@ class Vertex {
   /**
    *@fn unsigned int getID ( )
    *@fn double getEnergy ()
+   *@fn double getEnergy () const
    *
    *Simply returns variable values. ('get' methods)  
    *
@@ -80,6 +108,7 @@ class Vertex {
 
   /**
    *@fn string toString()
+   *@fn string toString() const
    *
    * Retrieves a string representation of the vertex ( just the id )
    *
@@ -93,12 +122,19 @@ class Vertex {
     return to_str < unsigned int > ( id_ );
   }
 
-  /**
-   *
-   * edge_count_ probably could have been public, to be honest
-   */
+  
   void resetEdgeCount() { edge_count_ = 0; }
   void incrementEdgeCount(){ ++edge_count_; }
+
+  /**
+   *@fn unsigned int getEdgeCount()
+   *
+   * Simply retreives the edge_count_ value.
+   *    edge_count_ probably could have been public, to be honest
+   * 
+   *@return Number of active edges this vertex is involved in
+   *            (active means there's a positive weight)
+   */
   unsigned int getEdgeCount() { return edge_count_; }
 
   /**
@@ -109,11 +145,18 @@ class Vertex {
   ~Vertex(){};
 
  private:
-  unsigned int id_;
-  double energy_;
-  unsigned int edge_count_;
+  unsigned int id_;              //Identifier
+  double energy_;                //Energy value for hub determination
+  unsigned int edge_count_;      //Number of active edges vertex
+                                 //is part of
 };
 
+/**
+ *@fn cmp_vptr 
+ *
+ * Custom comparator for shared_ptr < Vertex > containers
+ * Simply calls through to the overloaded operator<()
+ */
 struct cmp_vptr {
   bool operator () ( const shared_ptr < Vertex >& A, const shared_ptr < Vertex >& B ){
     return ( *A < *B );

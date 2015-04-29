@@ -1,3 +1,29 @@
+/**
+ *@file Edge.h
+ *
+ *  Declarations for the Edge class, custom comparator for 
+ *shared_ptr to Edges, and a helpful typedef for a set of Edges
+ *
+ *@author James Thompson
+ *
+ * Copyright James Thompson 2015
+ * This program is distributed under the terms of the GNU General Public License
+ 
+ This file is part of RPI-evo-model.                                                                                                   
+    RPI-evo-model is free software: you can redistribute it and/or modify                                                              
+    it under the terms of the GNU General Public License as published by                                                               
+    the Free Software Foundation, either version 3 of the License, or                                                                  
+    (at your option) any later version.                                                                                               
+ 
+    RPI-evo-model is distributed in the hope that it will be useful,                                                                   
+    but WITHOUT ANY WARRANTY; without even the implied warranty of        
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         
+    GNU General Public License for more details.                          
+ 
+    You should have received a copy of the GNU General Public License                                                                  
+    along with RPI-evo-model.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #ifndef RPI_EDGE
 #define RPI_EDGE
 
@@ -7,86 +33,99 @@
 
 using namespace std;
 
+/**
+ *@class Edge:public Group
+ *
+ *    Represents an interaction group in the network. Does not technically have
+ *  to be between two entities - can be more. Interactions in social networks 
+ *  have been found to follow bursty behavior, so to model this, each edge 
+ *  tracks the wait-time for the next interaction between entities involved.
+ *  The wait times, when modeled with a power law, then result in bursty 
+ *  behavior in general. 
+ * 
+ *    Wait times should be scaled so that one time window equals 1 unit of 
+ *  waiting. Then, weight of the edge is the number of interactions that 
+ *  happen between time i and time i+1.
+ */
 class Edge:public Group {
  public:  
+  /**
+   *@fn Edge()
+   *
+   * Initializes the next weight time and current edge weight to zero.
+   */
  Edge():Group(), wait_time_(0), edge_weight_(0){}
+  /**
+   *@fn ~Edge()
+   */
   ~Edge(){}
   
-  bool generateWeight(unique_ptr < Parameters >& P ) {
-    PowerLaw pl ( -1.75, getTotalEnergy(P->get < double > ( "grav",0.2 ), P-> get < double > ( "minlag", 0.2 ), P->get < double > ( "vmax", 1 ) ), 3.0 );
-    edge_weight_ = 0;
-    
-    while ( wait_time_ < 1.0 ){
-      wait_time_ += pl.Sample();
-      ++edge_weight_;
-    }
+  /**
+   *@fn bool generateWeight(unique_ptr < Parameters >& P )
+   *
+   *  Simulates waiting times for the edge until the threshold for the current
+   * window is reached. The number of interactions that occured is set as the
+   * edge weight.
+   *
+   *@return True if at least one interaction occured in the time window
+   */
+  bool generateWeight(unique_ptr < Parameters >& P );
 
-    wait_time_ -= 1.0;
+  /**
+   *@fn string toString()
+   *
+   *   Constructs a string representation of the edge or interaction.
+   *
+   *@return A string with multiple lines. Each line corresponds to a pair of
+   *        members in the edge. Each line has the format 
+   *            'member_a|member_b|edge_weight'
+   */
+  string toString();
 
-    if ( edge_weight_ > 0 ){
-      //Increase edge count for all vertices in this edge
-      vset::iterator it_v;
-      for ( it_v = members_.begin(); it_v != members_.end(); it_v++ ){
-	(*it_v)->incrementEdgeCount();
-      }
-    }
-
-    return edge_weight_ > 0;
-  }
-
-  double getTotalEnergy( double gravity, double minlag, double max_energy){
-    double res = -1;
-    double max_res = 0;
-    bool considered = false;
-    
-    vset::iterator it_v;
-    for ( it_v = members_.begin(); it_v != members_.end(); it_v++ ){
-      double v_lag = ( max_energy - (*it_v)->getEnergy() ) + minlag;
-      if ( v_lag > res ) {
-	res = v_lag;
-      }
-    }
-    
-    max_res = res;
-
-    for ( it_v = members_.begin(); it_v != members_.end(); it_v++ ){
-      double v_lag = ( max_energy - (*it_v)->getEnergy() ) + minlag;
-      if ( ( v_lag == max_res ) && (!considered) ){
-	considered = true;
-	continue;
-      } else {
-	res -= ( gravity * ( res - v_lag ) );
-      }
-    }
-    
-    return res;
-  }
-
+  /**
+   *@fn double getWeight ( )
+   *
+   *  Accesses current edge weight.
+   *
+   *@return Current count of number of interactions.
+   */
   double getWeight ( ) { return edge_weight_; }
-  
-  string toString() {
-    string res = "";
-    
-    if ( edge_weight_ == 0 ) return res;
-
-    vset::iterator it_a, it_b;
-    for ( it_a = members_.begin(); it_a != members_.end(); it_a++ ){
-      it_b = it_a;
-      for ( ++it_b; it_b != members_.end(); it_b++ ){
-	res += (*it_a)->toString() + "|" + (*it_b)->toString() + "|" + to_str < double > ( edge_weight_ ) + "\n";
-      }
-      
-    }
-    
-    return res;
-  }
 
  private:
-  double wait_time_;
-  double edge_weight_;
+  double wait_time_;         //Tracks time until the next interaction
+  double edge_weight_;       //Holds the number of interactions that happened
+                             //   in 'current' time window.
+
+  /**
+   *@fn double getTotalEnergy( double gravity, double minlag, double max_energy)
+   *
+   *  Wait times for the edge are modelled by a power law. The power law needs 
+   *     a parameter to determine it's behavior ( the exponent ). This function
+   *     calculates an appropriate function for the exponent based on the energy
+   *     levels of the consituent members.
+   *
+   *@return A weighted average of the energy levels of edge members
+   */
+  double getTotalEnergy( double gravity, double minlag, double max_energy);
 };
 
+/**
+ *@struct cmp_pedge
+ *
+ *  Custom comparator class for containers of shared_ptrs to Edges
+ */
 struct cmp_pedge{
+  /**
+   *@fn bool operator() ( const shared_ptr < Edge >& A, const shared_ptr < Edge >& B )
+   *
+   * Called for comparison in containers of shared_ptrs to Edges. Simple call 
+   *     through to the overloaded comparator for the objects pointed to.
+   *
+   *@param A First edge to compare
+   *@param B Second edge to compare
+   *@return True if edge A comes before edge B in the ordering defined by 
+   *          Edge::operator<()
+   */
   bool operator() ( const shared_ptr < Edge >& A, const shared_ptr < Edge >& B ){
     return ( *A < *B );
   }

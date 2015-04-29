@@ -1,0 +1,32 @@
+Description:
+	The executable 'model' runs a program to construct a random temporal network with an embedded community evolution structure. The temporal network is modelled with static 'snapshots' representing the system at different points in time. Static networks generated are constructed to model features from real world networks like community structure, high clustering coefficient, and small diameter. 
+
+Building:
+	Extract the tarball	
+	Run make
+
+Running: 
+    Parameters:
+        vexp			Exponent for power law for vertex energies
+	vmin/vmax		Energy minimum/maximum
+	cexp/cmin/cmax		Exponent/minimum/maximum for community sizes
+	grav			For edge instantiation between two vertices: Vertex combined energy 
+				    = (grav * ( high_lag_-low_lag)) + low_lag
+	V			Number of vertices
+	cnum (optional) 	Hard number of communities to construct for a time window
+	vmem 			Average number of communities each vertex should belong to ( not to be used with cnum )
+	mp			Mixing parameter : percentage of edges of the network within communities
+	vnewmin/vnewmax		Minimum/Maximum percentage for new vertices between time windows
+	cdie			Probability a community dies in any time window
+	pgrow 			Probability of a community growing between time windows
+	maxgrow			Percentage of size change allowed in communities between time windows
+	pmerge 			Probability value for a community to be chosen for a merge event ( 1 / |C|^p_merge )
+	psplit			Probability of a community to be chosen for a split ( psplit * |C| )
+	dup			Probability a vertex stays in both communities when split occurs
+	minsplit		Minimum size a community must be to be considered for a split
+	cnew			Constructs (cnew * #_of_communities) new communities at each time window
+	minlag			Minimum value fofr transferring energy into lag
+
+
+    Example:
+           ./model `cat example.dat`

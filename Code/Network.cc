@@ -1,3 +1,29 @@
+/**
+ *@file Network.cc
+ *
+ *Member function definitions for the Network class
+ *
+ *@author James Thompson
+ *
+ *Copyright James Thompson 2015
+ *This program is distributed under the terms of the GNU General Public License
+
+This file is part of RPI-evo-model.                                                                                                   
+    RPI-evo-model is free software: you can redistribute it and/or modify                                                              
+    it under the terms of the GNU General Public License as published by                                                               
+    the Free Software Foundation, either version 3 of the License, or                                                                  
+    (at your option) any later version.                                                                                             
+
+    RPI-evo-model is distributed in the hope that it will be useful,                                                                   
+    but WITHOUT ANY WARRANTY; without even the implied warranty of                                                                    
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                                                                   
+    GNU General Public License for more details.                                                                                    
+
+    You should have received a copy of the GNU General Public License                                                                  
+    along with RPI-evo-model.  If not, see <http://www.gnu.org/licenses/>.
+
+ */
+
 #include "Network.h"
 
 void Network::RandomNetwork ( unique_ptr < Parameters >& P ) { 
@@ -8,13 +34,16 @@ void Network::RandomNetwork ( unique_ptr < Parameters >& P ) {
     addRandomVertex();
   }
   
-  //Create community structure                                    
+  //Create community structure with randomly sampled vertices
   if ( P->hasFlag ( "cnum" ) ) {
+    //Constructs a certain number of communities
     int target = P->get < int > ( "cnum" );
     for ( int i = 0; i < target; i++ ){
       addCommunity ( RandomCommunity ( cpl_->Sample() ) );
     }
   } else {
+    //Constructs communities until vertices have a target average
+    //    membership
     double target_membership = P->get < double > ( "vmem", 1.2 );
     unsigned int total_size = 0;
     
@@ -26,27 +55,36 @@ void Network::RandomNetwork ( unique_ptr < Parameters >& P ) {
     }
   }
 
+  //Make sure each vertex has at least one community membership
   fillCommunities();
   
+  //Construct edge structure
   populateEdges(P);
 }
 
 shared_ptr < Community > Network::RandomCommunity ( unsigned int size ) {
+  // Empty result community seed
   shared_ptr < Community > res ( new Community() );
 
-
+  // Continually adds members to community until target size is reached
   for ( int i = 0; i < size; i++ ){
     if ( !res->addMember ( getRandomVertex () ) ){
       --i; 
     }
   }
+  
   return res;
 }
+
 
 void Network::populateEdges ( unique_ptr < Parameters >& P ){
   //Generates internal edges, copying old edge if exists
   eset new_edge_set;
   eset::iterator it_e; 
+  
+  //Goes through each pair of vertices that shares a community
+  //  multiple edges are taken care of by the automatic 
+  //  uniqueness of stl set containers and custom comparators
   for ( int i = 0; i < C_.size(); i++ ){
     const vset verts = C_[i]->getMembers();
     
@@ -107,12 +145,15 @@ void Network::populateEdges ( unique_ptr < Parameters >& P ){
 }
 
 void Network::addRandomVertex ( ){
+  //Generates new energy
   double next_energy = vpl_->Sample();
   total_energy_ += next_energy;
+  //Inserts vertex into network
   V_.insert ( shared_ptr < Vertex > ( new Vertex ( next_id_++, next_energy ) ) );
 }
 
 void Network::deathEvents ( double dprob ){
+  //Goes through each community, deleting it with a given probability
   for ( int i = 0; i < C_.size(); i++ ){
     if ( random_double ( 0, 1 ) < dprob ){
       C_[i]->clearMembers();
@@ -121,6 +162,8 @@ void Network::deathEvents ( double dprob ){
 }
 
 void Network::birthEvents ( double bprop ){
+  //Constructs a relatively small number of new communities
+  //    to begin new evolutions
   int new_com = bprop * C_.size();
   for ( int i = 0; i < new_com; i++ ){
     addCommunity ( RandomCommunity ( cpl_->Sample() ) );
@@ -131,13 +174,14 @@ void Network::growAndShrink ( double pgr, double sgr ){
   for ( int i = 0; i < C_.size(); i++ ){
     int new_size = C_[i]->size();
 
+    //Decides on the new size for the community
     if ( random_double () < pgr ) {
       new_size += (random_double ( 0, sgr ) * new_size );
     } else { 
       new_size -= (random_double ( 0, sgr ) * new_size );
     }
-    //cerr << "Old size : " << C_[i]->size() << endl << "New size : " << new_size << endl;
-
+    
+    //Changes membership until the sizes match
     while ( C_[i]->size() > new_size ){
       C_[i]->removeRandomMember();
     }
@@ -154,6 +198,8 @@ void Network::mergeAndSplit ( double merge_prob, double split_prob, double dupli
   
   vector < int > merge_coms;
   
+  //Goes through each community, picking out communities for 
+  //    merging and splitting others.
   for ( int i = 0; i < C_.size(); i++ ){
     double community_fate = random_double();
     
@@ -176,6 +222,7 @@ void Network::mergeAndSplit ( double merge_prob, double split_prob, double dupli
     }
   }
 
+  //Randomly pairs up communities for merging
   random_shuffle ( merge_coms.begin(), merge_coms.end() );
   
   for ( uint i = 0; i < merge_coms.size() - 1; i+=2 ){
@@ -194,29 +241,34 @@ void Network::mergeAndSplit ( double merge_prob, double split_prob, double dupli
 }
 
 void Network::genNextTimeWindow ( unique_ptr < Parameters >& P ){
+  //Grows network
   double increment = random_double ( P->get < double > ( "vnewmin", 0.2 ), P->get < double > ( "vnewmax", 0.4 ) );
-  //cerr << increment << endl;
   unsigned int vadd = V_.size() * increment;
-  //cerr << "Adding " << vadd << " new vertices" << endl;
   for ( int i = 0; i < vadd; i++ ){
     addRandomVertex();
   }
   
+  //Embeds community events
   deathEvents ( P->get < double > ( "cdie", 0.1 ) );
   growAndShrink ( P->get < double > ( "pgrow" , 0.5 ), P->get < double > ( "maxgrow", 0.25 ) );
   mergeAndSplit ( P->get < double > ( "pmerge", 1), P->get < double > ( "psplit", 0.01), P->get < double > ( "dup", 0.2 ),  P->get < int > ( "minsplit", 7 ), P->get < string > ( "fout", "Transition" ) + to_str < int > ( current_window_ ) + "-" + to_str < int > (current_window_+1) );
   birthEvents ( P->get < double > ( "cnew", 0.1 ) );
 
+  //Makes sure each vertex is still in a community
   fillCommunities();
   
+  //Constructs network
   populateEdges(P);
 
+  //Incrementstracker
   ++current_window_;
 }
 
 void Network::fillCommunities (){
   vset::iterator it_v = V_.begin();
   
+  //Adds random communities to the structure until
+  //   each vertex is associated with at least one community
   while ( membership_.size() != V_.size() ){
     shared_ptr < Community > next_com ( new Community() );
     unsigned int next_size = cpl_->Sample();
@@ -242,6 +294,8 @@ void Network::printNetwork ( string filename ){
   ofstream fout ( filename.c_str() );
   
   eset::iterator it_e;
+  //If the edge representation is not empty ( 0-weight edge )
+  //    print the string representation to the file provided
   for ( it_e = E_.begin(); it_e != E_.end(); it_e++ ){
     if ( ( (*it_e)->toString() ).size() > 0 )
       fout << (*it_e)->toString();
